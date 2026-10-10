@@ -1,5 +1,8 @@
 package org.chat.config;
 
+import java.util.concurrent.Executor;
+import java.util.concurrent.Executors;
+
 import org.chat.component.DynamicContentRetriever;
 import org.chat.service.Assistant;
 import org.springframework.beans.factory.annotation.Value;
@@ -10,9 +13,10 @@ import dev.langchain4j.data.segment.TextSegment;
 import dev.langchain4j.memory.chat.ChatMemoryProvider;
 import dev.langchain4j.memory.chat.MessageWindowChatMemory;
 import dev.langchain4j.model.chat.ChatModel;
+import dev.langchain4j.model.chat.StreamingChatModel;
 import dev.langchain4j.model.embedding.EmbeddingModel;
-import dev.langchain4j.model.ollama.OllamaChatModel;
 import dev.langchain4j.model.ollama.OllamaEmbeddingModel;
+import dev.langchain4j.model.ollama.OllamaStreamingChatModel;
 import dev.langchain4j.rag.content.retriever.EmbeddingStoreContentRetriever;
 import dev.langchain4j.service.AiServices;
 import dev.langchain4j.store.embedding.EmbeddingStore;
@@ -35,13 +39,25 @@ public class AiConfig {
     private String embeddingModelName;
 
     @Bean
-    public ChatModel chatModel() {
-        return OllamaChatModel.builder().baseUrl(baseUrl).modelName(modelName).temperature(temperature).build();
+    public Executor asyncExecutor() {
+        return Executors.newCachedThreadPool();
+    }
+
+    @Bean
+    public StreamingChatModel streamingChatModel() {
+        return OllamaStreamingChatModel.builder()
+                .baseUrl(baseUrl)
+                .modelName(modelName)
+                .temperature(temperature)
+                .build();
     }
 
     @Bean
     public EmbeddingModel embeddingModel() {
-        return OllamaEmbeddingModel.builder().baseUrl(baseUrl).modelName(embeddingModelName).build();
+        return OllamaEmbeddingModel.builder()
+                .baseUrl(baseUrl)
+                .modelName(embeddingModelName)
+                .build();
     }
 
     @Bean
@@ -70,12 +86,12 @@ public class AiConfig {
 
     @Bean
     public Assistant assistant(
-            ChatModel chatModel,
+            StreamingChatModel streamingChatModel,
             DynamicContentRetriever contentRetriever,
             ChatMemoryProvider chatMemoryProvider) {
 
         return AiServices.builder(Assistant.class)
-                .chatModel(chatModel)
+                .streamingChatModel(streamingChatModel)
                 .contentRetriever(contentRetriever)
                 .chatMemoryProvider(chatMemoryProvider)
                 .build();

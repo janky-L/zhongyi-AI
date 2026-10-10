@@ -1,6 +1,9 @@
 spring:
   application:
     name: zhongyi-AI
+  mvc:
+    async:
+      request-timeout: 120000
 
 ollama:
   base-url: http://localhost:11434
